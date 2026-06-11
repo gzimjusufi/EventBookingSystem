@@ -1,44 +1,35 @@
-name: CI — EventBookingSystem
+name: CI — Build & Test
 
-trigger:
-  branches:
-    include:
-      - main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
-pool:
-  vmImage: 'ubuntu-latest'
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
 
-steps:
-  # Step 1: Use .NET 8
-  - task: UseDotNet@2
-    displayName: 'Install .NET 8'
-    inputs:
-      version: '8.x'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  # Step 2: Restore all packages
-  - script: dotnet restore EventBookingApi/EventBookingApi.csproj
-    displayName: 'Restore API packages'
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
-  - script: dotnet restore EventBookingApi.Tests/EventBookingApi.Tests.csproj
-    displayName: 'Restore Test packages'
+      - name: Restore API
+        run: dotnet restore EventBookingApi/EventBookingApi.csproj
 
-  # Step 3: Build
-  - script: dotnet build EventBookingApi/EventBookingApi.csproj --no-restore --configuration Release
-    displayName: 'Build API'
+      - name: Restore Tests
+        run: dotnet restore EventBookingApi.Tests/EventBookingApi.Tests.csproj
 
-  - script: dotnet build EventBookingApi.Tests/EventBookingApi.Tests.csproj --no-restore --configuration Release
-    displayName: 'Build Tests'
+      - name: Build API
+        run: dotnet build EventBookingApi/EventBookingApi.csproj --no-restore --configuration Release
 
-  # Step 4: Run unit tests
-  - script: dotnet test EventBookingApi.Tests/EventBookingApi.Tests.csproj --no-build --configuration Release --verbosity normal
-    displayName: 'Run Unit Tests'
+      - name: Build Tests
+        run: dotnet build EventBookingApi.Tests/EventBookingApi.Tests.csproj --no-restore --configuration Release
 
-  # Step 5: Publish artifact
-  - script: dotnet publish EventBookingApi/EventBookingApi.csproj -c Release -o $(Build.ArtifactStagingDirectory)/publish
-    displayName: 'Publish artifact'
-
-  - task: PublishBuildArtifacts@1
-    displayName: 'Upload artifact'
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)/publish'
-      ArtifactName: 'eventbooking-api'
+      - name: Run Unit Tests
+        run: dotnet test EventBookingApi.Tests/EventBookingApi.Tests.csproj --no-build --configuration Release --verbosity normal
