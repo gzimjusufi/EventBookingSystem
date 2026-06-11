@@ -1,4 +1,4 @@
-name: CI — Build & Test
+name: CI — Build, Test & Deploy
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-test:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,3 +33,13 @@ jobs:
 
       - name: Run Unit Tests
         run: dotnet test EventBookingApi.Tests/EventBookingApi.Tests.csproj --no-build --configuration Release --verbosity normal
+
+      - name: Publish API
+        run: dotnet publish EventBookingApi/EventBookingApi.csproj -c Release -o ./publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'eventbooking-api'
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: ./publish
