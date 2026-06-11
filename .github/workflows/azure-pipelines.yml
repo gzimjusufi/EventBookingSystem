@@ -1,0 +1,44 @@
+name: CI — EventBookingSystem
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  # Step 1: Use .NET 8
+  - task: UseDotNet@2
+    displayName: 'Install .NET 8'
+    inputs:
+      version: '8.x'
+
+  # Step 2: Restore all packages
+  - script: dotnet restore EventBookingApi/EventBookingApi.csproj
+    displayName: 'Restore API packages'
+
+  - script: dotnet restore EventBookingApi.Tests/EventBookingApi.Tests.csproj
+    displayName: 'Restore Test packages'
+
+  # Step 3: Build
+  - script: dotnet build EventBookingApi/EventBookingApi.csproj --no-restore --configuration Release
+    displayName: 'Build API'
+
+  - script: dotnet build EventBookingApi.Tests/EventBookingApi.Tests.csproj --no-restore --configuration Release
+    displayName: 'Build Tests'
+
+  # Step 4: Run unit tests
+  - script: dotnet test EventBookingApi.Tests/EventBookingApi.Tests.csproj --no-build --configuration Release --verbosity normal
+    displayName: 'Run Unit Tests'
+
+  # Step 5: Publish artifact
+  - script: dotnet publish EventBookingApi/EventBookingApi.csproj -c Release -o $(Build.ArtifactStagingDirectory)/publish
+    displayName: 'Publish artifact'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Upload artifact'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/publish'
+      ArtifactName: 'eventbooking-api'
