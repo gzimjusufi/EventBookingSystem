@@ -37,9 +37,13 @@ jobs:
       - name: Publish API
         run: dotnet publish EventBookingApi/EventBookingApi.csproj -c Release -o ./publish
 
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'eventbooking-api'
-          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
           package: ./publish
