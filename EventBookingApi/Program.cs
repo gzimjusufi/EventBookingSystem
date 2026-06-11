@@ -68,7 +68,7 @@ public class Program
             };
         });
 
-        // CORS — allow React frontend
+        // CORS — allow Vercel frontend
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", policy =>
