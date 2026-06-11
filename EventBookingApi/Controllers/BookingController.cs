@@ -8,7 +8,7 @@ namespace EventBookingApi.Controllers;
 
 [Authorize]
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 [Authorize]
 public class BookingController : ControllerBase
 {
