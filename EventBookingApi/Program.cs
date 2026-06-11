@@ -71,8 +71,12 @@ public class Program
         // CORS — allow Vercel frontend
         builder.Services.AddCors(options =>
         {
-            options.AddPolicy("AllowAll", policy =>
-                policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            options.AddPolicy("AllowVercel", policy =>
+                policy
+                    .WithOrigins("https://event-booking-system-virid.vercel.app")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials());
         });
 
         // Swagger with JWT support
@@ -112,7 +116,7 @@ public class Program
             app.UseSwaggerUI();
         }
 
-        app.UseCors("AllowAll");
+        app.UseCors("AllowVercel");
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
