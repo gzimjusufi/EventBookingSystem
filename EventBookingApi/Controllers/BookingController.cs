@@ -9,7 +9,6 @@ namespace EventBookingApi.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class BookingController : ControllerBase
 {
     private readonly IBookingService _bookingService;
