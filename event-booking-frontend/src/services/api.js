@@ -76,6 +76,16 @@ export async function deleteEvent(id) {
   return res.text();
 }
 
+export async function updateEvent(id, data) {
+  const res = await fetch(`${BASE_URL}/Event/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.text();
+}
+
 // ── Bookings ──────────────────────────────────────────────────────────────────
 export async function getMyBookings() {
   const res = await fetch(`${BASE_URL}/Booking/my`, { headers: authHeaders() });

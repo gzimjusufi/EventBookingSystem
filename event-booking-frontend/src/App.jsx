@@ -4,6 +4,7 @@ import EventList from './components/EventList';
 import EventDetail from './components/EventDetail';
 import MyBookings from './components/MyBookings';
 import AddEvent from './components/AddEvent';
+import EditEvent from './components/EditEvent';
 import AdminDashboard from './components/AdminDashboard';
 
 function App() {
@@ -19,8 +20,9 @@ function App() {
     } catch { return null; }
   });
 
-  const [view, setView]           = useState('list');
+  const [view, setView]             = useState('list');
   const [selectedId, setSelectedId] = useState(null);
+  const [editingEvent, setEditingEvent] = useState(null);  // ← new
 
   const handleLogin = (data) => {
     try {
@@ -44,10 +46,10 @@ function App() {
   const isAdmin = user?.role?.includes('Admin');
 
   const navItems = [
-    { id: 'list',      label: '🎭 Events',    show: true },
-    { id: 'myBookings',label: '🎫 My Tickets', show: !!user },
-    { id: 'dashboard', label: '📊 Dashboard',  show: isAdmin },
-    { id: 'addEvent',  label: '✨ Add Event',  show: isAdmin },
+    { id: 'list',       label: '🎭 Events',    show: true },
+    { id: 'myBookings', label: '🎫 My Tickets', show: !!user },
+    { id: 'dashboard',  label: '📊 Dashboard',  show: isAdmin },
+    { id: 'addEvent',   label: '✨ Add Event',  show: isAdmin },
   ];
 
   return (
@@ -67,7 +69,7 @@ function App() {
         zIndex: 100,
       }}>
         {/* Logo */}
-        <div onClick={() => setView('list')} style={{
+        <div onClick={() => { setView('list'); setEditingEvent(null); }} style={{
           display: 'flex', alignItems: 'center', gap: 10,
           cursor: 'pointer', marginRight: 32
         }}>
@@ -85,7 +87,7 @@ function App() {
         {/* Nav links */}
         <div style={{ display: 'flex', gap: 4 }}>
           {navItems.filter(n => n.show).map(n => (
-            <button key={n.id} onClick={() => setView(n.id)} style={{
+            <button key={n.id} onClick={() => { setView(n.id); setEditingEvent(null); }} style={{
               background: view === n.id ? 'rgba(99,102,241,0.15)' : 'transparent',
               color: view === n.id ? '#818cf8' : '#94a3b8',
               border: view === n.id ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
@@ -161,9 +163,18 @@ function App() {
         {view === 'auth'       && <AuthPage onLogin={handleLogin} />}
         {view === 'list'       && <EventList onSelect={id => { setSelectedId(id); setView('detail'); }} />}
         {view === 'detail'     && <EventDetail id={selectedId} user={user} onBack={() => setView('list')} />}
-        {view === 'myBookings' && user && <MyBookings />}
+        {view === 'myBookings' && user    && <MyBookings />}
         {view === 'dashboard'  && isAdmin && <AdminDashboard />}
-        {view === 'addEvent'   && isAdmin && <AddEvent onCreated={() => setView('list')} />}
+        {view === 'addEvent'   && isAdmin && !editingEvent && (
+          <AddEvent onCreated={() => setView('list')} />
+        )}
+        {view === 'addEvent'   && isAdmin && editingEvent && (
+          <EditEvent
+            event={editingEvent}
+            onUpdated={() => { setEditingEvent(null); setView('list'); }}
+            onCancel={() => setEditingEvent(null)}
+          />
+        )}
       </main>
 
       {/* ── Footer ─────────────────────────────────────────────────────────── */}

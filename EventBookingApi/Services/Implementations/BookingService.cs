@@ -51,6 +51,28 @@ public class BookingService : IBookingService
         evt.AvailableTickets -= dto.NumberOfTickets;
         await _eventRepository.UpdateEvent(evt);
 
+        // 1. Max 4 tickets per user per event
+        var existingBookings = await _bookingRepository.GetBookingsByEvent(dto.EventId);
+        var userTicketsForEvent = existingBookings
+            .Where(b => b.UserId == userId && b.Status != "Cancelled")
+            .Sum(b => b.NumberOfTickets);
+
+        if (userTicketsForEvent + dto.NumberOfTickets > 4)
+            throw new Exception($"You can only hold up to 4 tickets per event. You already have {userTicketsForEvent}.");
+
+        // 2. No overlapping events on the same day
+        var userBookings = await _bookingRepository.GetBookingsByUser(userId);
+        bool hasConflict = userBookings.Any(b =>
+            b.Status != "Cancelled" &&
+            b.EventId != dto.EventId &&
+            b.Event != null &&
+            b.Event.EventDate.Date == evt.EventDate.Date &&
+            Math.Abs((b.Event.EventDate - evt.EventDate).TotalHours) < 2
+        );
+
+        if (hasConflict)
+            throw new Exception("You already have a booking for another event within 2 hours of this one.");
+
         var booking = new Booking
         {
             UserId = userId,
