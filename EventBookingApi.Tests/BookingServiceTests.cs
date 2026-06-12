@@ -21,20 +21,20 @@ public class BookingServiceTests
     public BookingServiceTests()
     {
         _bookingRepoMock = new Mock<IBookingRepository>();
-        _eventRepoMock   = new Mock<IEventRepository>();
+        _eventRepoMock = new Mock<IEventRepository>();
         _service = new BookingService(_bookingRepoMock.Object, _eventRepoMock.Object);
     }
 
     // Helper: creates a valid future event
     private static Event MakeEvent(int id, int available = 50) => new Event
     {
-        Id               = id,
-        Title            = $"Event {id}",
-        Location         = "Skopje",
-        Category         = "Concert",
-        EventDate        = DateTime.UtcNow.AddDays(10),
-        TicketPrice      = 20,
-        TotalTickets     = 100,
+        Id = id,
+        Title = $"Event {id}",
+        Location = "Skopje",
+        Category = "Concert",
+        EventDate = DateTime.UtcNow.AddDays(10),
+        TicketPrice = 20,
+        TotalTickets = 100,
         AvailableTickets = available
     };
 
@@ -45,6 +45,14 @@ public class BookingServiceTests
     {
         var evt = MakeEvent(1, available: 50);
         _eventRepoMock.Setup(r => r.GetEventById(1)).ReturnsAsync(evt);
+
+        // ✅ Required: service calls these for the 4-ticket cap and overlap checks
+        _bookingRepoMock
+            .Setup(r => r.GetBookingsByEvent(1))
+            .ReturnsAsync(new List<Booking>());
+        _bookingRepoMock
+            .Setup(r => r.GetBookingsByUser("user-123"))
+            .ReturnsAsync(new List<Booking>());
 
         var dto = new CreateBookingDto { EventId = 1, NumberOfTickets = 3 };
 
@@ -57,11 +65,11 @@ public class BookingServiceTests
 
         // Booking should be created with correct total price
         _bookingRepoMock.Verify(r => r.CreateBooking(It.Is<Booking>(b =>
-            b.UserId           == "user-123" &&
-            b.EventId          == 1 &&
-            b.NumberOfTickets  == 3 &&
-            b.TotalPrice       == 60 && // 3 * €20
-            b.Status           == "Confirmed"
+            b.UserId == "user-123" &&
+            b.EventId == 1 &&
+            b.NumberOfTickets == 3 &&
+            b.TotalPrice == 60 && // 3 * €20
+            b.Status == "Confirmed"
         )), Times.Once);
     }
 
@@ -111,6 +119,26 @@ public class BookingServiceTests
         ex.Message.Should().Contain("2 tickets available");
     }
 
+    [Fact]
+    public async Task CreateBooking_ExceedsPerUserLimit_ThrowsException()
+    {
+        var evt = MakeEvent(1, available: 50);
+        _eventRepoMock.Setup(r => r.GetEventById(1)).ReturnsAsync(evt);
+
+        // User already has 3 confirmed tickets for this event
+        _bookingRepoMock
+            .Setup(r => r.GetBookingsByEvent(1))
+            .ReturnsAsync(new List<Booking>
+            {
+                new Booking { UserId = "user-1", EventId = 1, NumberOfTickets = 3, Status = "Confirmed" }
+            });
+
+        var dto = new CreateBookingDto { EventId = 1, NumberOfTickets = 2 }; // would exceed 4
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => _service.CreateBooking(dto, "user-1"));
+        ex.Message.Should().Contain("4 tickets");
+    }
+
     // ── CancelBooking ───────────────────────────────────────────────────────
 
     [Fact]
@@ -119,8 +147,12 @@ public class BookingServiceTests
         var evt = MakeEvent(1, available: 47);
         var booking = new Booking
         {
-            Id = 10, UserId = "user-123", EventId = 1,
-            NumberOfTickets = 3, TotalPrice = 60, Status = "Confirmed",
+            Id = 10,
+            UserId = "user-123",
+            EventId = 1,
+            NumberOfTickets = 3,
+            TotalPrice = 60,
+            Status = "Confirmed",
             Event = evt
         };
 
@@ -141,6 +173,28 @@ public class BookingServiceTests
     }
 
     [Fact]
+    public async Task CancelBooking_PastEvent_ThrowsException()
+    {
+        var evt = MakeEvent(1);
+        evt.EventDate = DateTime.UtcNow.AddDays(-1); // event already happened
+        var booking = new Booking
+        {
+            Id = 1,
+            UserId = "user-1",
+            EventId = 1,
+            NumberOfTickets = 2,
+            Status = "Confirmed",
+            Event = evt
+        };
+
+        _bookingRepoMock.Setup(r => r.GetBookingById(1)).ReturnsAsync(booking);
+        _eventRepoMock.Setup(r => r.GetEventById(1)).ReturnsAsync(evt);
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => _service.CancelBooking(1, "user-1"));
+        ex.Message.Should().Contain("already taken place");
+    }
+
+    [Fact]
     public async Task CancelBooking_NotFound_ThrowsException()
     {
         _bookingRepoMock.Setup(r => r.GetBookingById(99)).ReturnsAsync((Booking?)null);
@@ -153,8 +207,11 @@ public class BookingServiceTests
     {
         var booking = new Booking
         {
-            Id = 1, UserId = "owner-user", EventId = 1,
-            NumberOfTickets = 2, Status = "Confirmed"
+            Id = 1,
+            UserId = "owner-user",
+            EventId = 1,
+            NumberOfTickets = 2,
+            Status = "Confirmed"
         };
         _bookingRepoMock.Setup(r => r.GetBookingById(1)).ReturnsAsync(booking);
 
@@ -168,8 +225,11 @@ public class BookingServiceTests
     {
         var booking = new Booking
         {
-            Id = 1, UserId = "user-1", EventId = 1,
-            NumberOfTickets = 2, Status = "Cancelled"
+            Id = 1,
+            UserId = "user-1",
+            EventId = 1,
+            NumberOfTickets = 2,
+            Status = "Cancelled"
         };
         _bookingRepoMock.Setup(r => r.GetBookingById(1)).ReturnsAsync(booking);
 
