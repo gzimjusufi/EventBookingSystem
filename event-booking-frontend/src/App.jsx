@@ -20,9 +20,9 @@ function App() {
     } catch { return null; }
   });
 
-  const [view, setView]             = useState('list');
-  const [selectedId, setSelectedId] = useState(null);
-  const [editingEvent, setEditingEvent] = useState(null);  // ← new
+  const [view, setView]               = useState('list');
+  const [selectedId, setSelectedId]   = useState(null);
+  const [editingEvent, setEditingEvent] = useState(null);
 
   const handleLogin = (data) => {
     try {
@@ -162,7 +162,14 @@ function App() {
       <main style={{ flex: 1, maxWidth: 1200, width: '100%', margin: '0 auto', padding: '40px 24px' }}>
         {view === 'auth'       && <AuthPage onLogin={handleLogin} />}
         {view === 'list'       && <EventList onSelect={id => { setSelectedId(id); setView('detail'); }} />}
-        {view === 'detail'     && <EventDetail id={selectedId} user={user} onBack={() => setView('list')} />}
+        {view === 'detail'     && (
+          <EventDetail
+            id={selectedId}
+            user={user}
+            onBack={() => setView('list')}
+            onEdit={isAdmin ? (event) => { setEditingEvent(event); setView('addEvent'); } : null}
+          />
+        )}
         {view === 'myBookings' && user    && <MyBookings />}
         {view === 'dashboard'  && isAdmin && <AdminDashboard />}
         {view === 'addEvent'   && isAdmin && !editingEvent && (
@@ -172,7 +179,7 @@ function App() {
           <EditEvent
             event={editingEvent}
             onUpdated={() => { setEditingEvent(null); setView('list'); }}
-            onCancel={() => setEditingEvent(null)}
+            onCancel={() => { setEditingEvent(null); setView('detail'); }}
           />
         )}
       </main>

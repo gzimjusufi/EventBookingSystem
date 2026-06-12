@@ -23,7 +23,7 @@ function StarRating({ value, onChange, readonly = false }) {
   );
 }
 
-export default function EventDetail({ id, user, onBack }) {
+export default function EventDetail({ id, user, onBack, onEdit }) {
   const [event, setEvent]               = useState(null);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
@@ -34,7 +34,7 @@ export default function EventDetail({ id, user, onBack }) {
   const [rating, setRating]             = useState(5);
   const [comment, setComment]           = useState('');
   const [reviewStatus, setReviewStatus] = useState('');
-  const [tab, setTab]                   = useState('details'); // details | reviews
+  const [tab, setTab]                   = useState('details');
 
   const load = async () => {
     setLoading(true); setError(null);
@@ -89,38 +89,51 @@ export default function EventDetail({ id, user, onBack }) {
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto' }}>
+
+      {/* Top bar: Back + Admin actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-  <button onClick={onBack} style={{
-    background: 'none', border: 'none', color: 'var(--accent)',
-    fontSize: 14, fontWeight: 600,
-    display: 'flex', alignItems: 'center', gap: 6, padding: 0, cursor: 'pointer'
-  }}>← Back to Events</button>
+        <button onClick={onBack} style={{
+          background: 'none', border: 'none', color: 'var(--accent)',
+          fontSize: 14, fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: 6, padding: 0, cursor: 'pointer'
+        }}>← Back to Events</button>
 
-  {user?.role?.includes('Admin') && (
-    <button onClick={async () => {
-      if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return;
-      try {
-        await deleteEvent(event.id);
-        onBack();
-      } catch (err) {
-        setDeleteStatus('error:' + err.message);
-      }
-    }} style={{
-      background: 'rgba(239,68,68,0.1)',
-      color: '#f87171',
-      border: '1px solid rgba(239,68,68,0.3)',
-      padding: '7px 16px', borderRadius: 8,
-      fontWeight: 600, fontSize: 13, cursor: 'pointer'
-    }}>🗑️ Delete Event</button>
-  )}
-</div>
+        {user?.role?.includes('Admin') && (
+          <div style={{ display: 'flex', gap: 8 }}>
+            {onEdit && (
+              <button onClick={() => onEdit(event)} style={{
+                background: 'rgba(245,158,11,0.1)',
+                color: '#fbbf24',
+                border: '1px solid rgba(245,158,11,0.3)',
+                padding: '7px 16px', borderRadius: 8,
+                fontWeight: 600, fontSize: 13, cursor: 'pointer'
+              }}>✏️ Edit Event</button>
+            )}
+            <button onClick={async () => {
+              if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return;
+              try {
+                await deleteEvent(event.id);
+                onBack();
+              } catch (err) {
+                setDeleteStatus('error:' + err.message);
+              }
+            }} style={{
+              background: 'rgba(239,68,68,0.1)',
+              color: '#f87171',
+              border: '1px solid rgba(239,68,68,0.3)',
+              padding: '7px 16px', borderRadius: 8,
+              fontWeight: 600, fontSize: 13, cursor: 'pointer'
+            }}>🗑️ Delete Event</button>
+          </div>
+        )}
+      </div>
 
-{deleteStatus.startsWith?.('error:') && (
-  <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8,
-    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-    color: '#f87171' }}>{deleteStatus.replace('error:', '')}
-  </div>
-)}
+      {deleteStatus.startsWith?.('error:') && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8,
+          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+          color: '#f87171' }}>{deleteStatus.replace('error:', '')}
+        </div>
+      )}
 
       {/* Header card */}
       <div style={{
