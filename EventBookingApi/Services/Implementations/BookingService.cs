@@ -99,6 +99,10 @@ public class BookingService : IBookingService
 
         // Return tickets to event
         var evt = await _eventRepository.GetEventById(booking.EventId);
+
+        if (evt != null && evt.EventDate <= DateTime.UtcNow)
+            throw new Exception("Cannot cancel a booking for an event that has already taken place.");
+
         if (evt != null)
         {
             evt.AvailableTickets += booking.NumberOfTickets;

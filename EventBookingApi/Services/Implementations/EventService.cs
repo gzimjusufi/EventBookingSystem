@@ -77,7 +77,7 @@ public class EventService : IEventService
         evt.EventDate = dto.EventDate;
         evt.TicketPrice = dto.TicketPrice;
         evt.TotalTickets = dto.TotalTickets;
-        evt.AvailableTickets = dto.TotalTickets - bookedTickets; // ✅ the fix
+        evt.AvailableTickets = dto.TotalTickets - bookedTickets; 
         evt.Category = dto.Category;
 
         await _eventRepository.UpdateEvent(evt);
