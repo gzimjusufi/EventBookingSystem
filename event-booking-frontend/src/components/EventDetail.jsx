@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getEventById, createBooking, getReviewsByEvent, submitReview, deleteReview } from '../services/api';
+import { getEventById, createBooking, getReviewsByEvent, submitReview, deleteReview, deleteEvent } from '../services/api';
 
 function StarRating({ value, onChange, readonly = false }) {
   const [hovered, setHovered] = useState(0);
@@ -24,6 +24,8 @@ function StarRating({ value, onChange, readonly = false }) {
 }
 
 export default function EventDetail({ id, user, onBack }) {
+  const [bookingStatus, setBookingStatus] = useState('');
+  const [deleteStatus, setDeleteStatus] = useState('');
   const [event, setEvent]               = useState(null);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
@@ -88,11 +90,38 @@ export default function EventDetail({ id, user, onBack }) {
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto' }}>
-      <button onClick={onBack} style={{
-        background: 'none', border: 'none', color: 'var(--accent)',
-        fontSize: 14, fontWeight: 600, marginBottom: 20,
-        display: 'flex', alignItems: 'center', gap: 6, padding: 0
-      }}>← Back to Events</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+  <button onClick={onBack} style={{
+    background: 'none', border: 'none', color: 'var(--accent)',
+    fontSize: 14, fontWeight: 600,
+    display: 'flex', alignItems: 'center', gap: 6, padding: 0, cursor: 'pointer'
+  }}>← Back to Events</button>
+
+  {user?.role?.includes('Admin') && (
+    <button onClick={async () => {
+      if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return;
+      try {
+        await deleteEvent(event.id);
+        onBack();
+      } catch (err) {
+        setDeleteStatus('error:' + err.message);
+      }
+    }} style={{
+      background: 'rgba(239,68,68,0.1)',
+      color: '#f87171',
+      border: '1px solid rgba(239,68,68,0.3)',
+      padding: '7px 16px', borderRadius: 8,
+      fontWeight: 600, fontSize: 13, cursor: 'pointer'
+    }}>🗑️ Delete Event</button>
+  )}
+</div>
+
+{deleteStatus.startsWith?.('error:') && (
+  <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8,
+    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+    color: '#f87171' }}>{deleteStatus.replace('error:', '')}
+  </div>
+)}
 
       {/* Header card */}
       <div style={{
