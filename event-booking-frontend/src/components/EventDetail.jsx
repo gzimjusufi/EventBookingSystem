@@ -24,13 +24,12 @@ function StarRating({ value, onChange, readonly = false }) {
 }
 
 export default function EventDetail({ id, user, onBack }) {
-  const [bookingStatus, setBookingStatus] = useState('');
-  const [deleteStatus, setDeleteStatus] = useState('');
   const [event, setEvent]               = useState(null);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
   const [tickets, setTickets]           = useState(1);
   const [bookingStatus, setBookingStatus] = useState('');
+  const [deleteStatus, setDeleteStatus] = useState('');
   const [reviews, setReviews]           = useState([]);
   const [rating, setRating]             = useState(5);
   const [comment, setComment]           = useState('');
