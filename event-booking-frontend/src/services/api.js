@@ -11,7 +11,7 @@ function authHeaders() {
   };
 }
 
-// ── Auth ──────────────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────────────────────
 export async function register(email, password) {
   const res = await fetch(`${BASE_URL}/Auth/register`, {
     method: 'POST',
@@ -32,16 +32,10 @@ export async function login(email, password) {
   return res.json();
 }
 
-// ── Events ────────────────────────────────────────────
+// ── Events ────────────────────────────────────────────────────────────────────
 export async function getAllEvents() {
   const res = await fetch(`${BASE_URL}/Event`);
   if (!res.ok) throw new Error('Failed to fetch events');
-  return res.json();
-}
-
-export async function getUpcomingEvents() {
-  const res = await fetch(`${BASE_URL}/Event/upcoming`);
-  if (!res.ok) throw new Error('Failed to fetch upcoming events');
   return res.json();
 }
 
@@ -53,7 +47,13 @@ export async function getEventById(id) {
 
 export async function getEventsByCategory(category) {
   const res = await fetch(`${BASE_URL}/Event/category/${category}`);
-  if (!res.ok) throw new Error('Failed to fetch events by category');
+  if (!res.ok) throw new Error('Failed to fetch events');
+  return res.json();
+}
+
+export async function getUpcomingEvents() {
+  const res = await fetch(`${BASE_URL}/Event/upcoming`);
+  if (!res.ok) throw new Error('Failed to fetch upcoming events');
   return res.json();
 }
 
@@ -76,11 +76,9 @@ export async function deleteEvent(id) {
   return res.text();
 }
 
-// ── Bookings ──────────────────────────────────────────
+// ── Bookings ──────────────────────────────────────────────────────────────────
 export async function getMyBookings() {
-  const res = await fetch(`${BASE_URL}/Booking/my`, {
-    headers: authHeaders()
-  });
+  const res = await fetch(`${BASE_URL}/Booking/my`, { headers: authHeaders() });
   if (!res.ok) throw new Error('Failed to fetch bookings');
   return res.json();
 }
@@ -102,4 +100,43 @@ export async function cancelBooking(id) {
   });
   if (!res.ok) throw new Error(await res.text());
   return res.text();
+}
+
+// ── Reviews ───────────────────────────────────────────────────────────────────
+export async function getReviewsByEvent(eventId) {
+  const res = await fetch(`${BASE_URL}/Review/event/${eventId}`);
+  if (!res.ok) throw new Error('Failed to fetch reviews');
+  return res.json();
+}
+
+export async function getAverageRating(eventId) {
+  const res = await fetch(`${BASE_URL}/Review/event/${eventId}/rating`);
+  if (!res.ok) return 0;
+  return res.json();
+}
+
+export async function submitReview(eventId, rating, comment) {
+  const res = await fetch(`${BASE_URL}/Review`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ eventId, rating, comment })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.text();
+}
+
+export async function deleteReview(eventId) {
+  const res = await fetch(`${BASE_URL}/Review/event/${eventId}`, {
+    method: 'DELETE',
+    headers: authHeaders()
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.text();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+export async function getDashboard() {
+  const res = await fetch(`${BASE_URL}/Dashboard`, { headers: authHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch dashboard');
+  return res.json();
 }

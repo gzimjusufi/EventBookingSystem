@@ -33,10 +33,13 @@ public class Program
         // Repositories
         builder.Services.AddScoped<IEventRepository, EventRepository>();
         builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+        builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 
         // Services
         builder.Services.AddScoped<IEventService, EventService>();
         builder.Services.AddScoped<IBookingService, BookingService>();
+        builder.Services.AddScoped<IReviewService, ReviewService>();
+        builder.Services.AddScoped<IDashboardService, DashboardService>();
         builder.Services.AddScoped<TokenService>();
 
         // Memory Cache
@@ -51,24 +54,24 @@ public class Program
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
         })
         .AddJwtBearer(options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
+                ValidateIssuer           = true,
+                ValidateAudience         = true,
+                ValidateLifetime         = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = "EventBookingIssuer",
-                ValidAudience = "EventBookingAudience",
+                ValidIssuer    = "EventBookingIssuer",
+                ValidAudience  = "EventBookingAudience",
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Convert.FromBase64String("RXZlbnRCb29raW5nU2VjcmV0S2V5Rm9ySldUMTIzNDU2Nzg="))
             };
         });
 
-        // CORS — allow Vercel frontend
+        // CORS
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", policy =>
@@ -81,12 +84,12 @@ public class Program
             option.SwaggerDoc("v1", new OpenApiInfo { Title = "EventBookingAPI", Version = "v1" });
             option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                In = ParameterLocation.Header,
-                Description = "JWT Authorization header using the Bearer scheme.",
-                Name = "Authorization",
-                Type = SecuritySchemeType.Http,
+                In           = ParameterLocation.Header,
+                Description  = "JWT Authorization header using the Bearer scheme.",
+                Name         = "Authorization",
+                Type         = SecuritySchemeType.Http,
                 BearerFormat = "JWT",
-                Scheme = "Bearer"
+                Scheme       = "Bearer"
             });
             option.AddSecurityRequirement(new OpenApiSecurityRequirement
             {

@@ -4,6 +4,7 @@ import EventList from './components/EventList';
 import EventDetail from './components/EventDetail';
 import MyBookings from './components/MyBookings';
 import AddEvent from './components/AddEvent';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -15,12 +16,10 @@ function App() {
       const rawRole = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
       const role = Array.isArray(rawRole) ? rawRole : [rawRole];
       return { token, email, role };
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   });
 
-  const [view, setView] = useState('list');
+  const [view, setView]           = useState('list');
   const [selectedId, setSelectedId] = useState(null);
 
   const handleLogin = (data) => {
@@ -32,9 +31,7 @@ function App() {
       localStorage.setItem('email', data.email);
       setUser({ token: data.token, email: data.email, role });
       setView('list');
-    } catch {
-      setView('list');
-    }
+    } catch { setView('list'); }
   };
 
   const handleLogout = () => {
@@ -44,127 +41,138 @@ function App() {
     setView('list');
   };
 
-  const openDetail = (id) => {
-    setSelectedId(id);
-    setView('detail');
-  };
-
   const isAdmin = user?.role?.includes('Admin');
 
-  return (
-    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: '100vh', background: '#f1f5f9' }}>
+  const navItems = [
+    { id: 'list',      label: '🎭 Events',    show: true },
+    { id: 'myBookings',label: '🎫 My Tickets', show: !!user },
+    { id: 'dashboard', label: '📊 Dashboard',  show: isAdmin },
+    { id: 'addEvent',  label: '✨ Add Event',  show: isAdmin },
+  ];
 
-      {/* ── Navbar ─────────────────────────────────────────────────────── */}
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+
+      {/* ── Navbar ─────────────────────────────────────────────────────────── */}
       <nav style={{
-        background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-        color: '#fff',
+        background: 'rgba(17,24,39,0.95)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
         padding: '0 32px',
         display: 'flex',
         alignItems: 'center',
-        gap: 4,
         height: 64,
-        boxShadow: '0 2px 12px rgba(30,64,175,0.4)'
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
       }}>
-        <span
-          onClick={() => setView('list')}
-          style={{ fontWeight: 800, fontSize: 20, marginRight: 24, cursor: 'pointer', letterSpacing: '-0.5px' }}
-        >
-          🎟️ EventBooking
-        </span>
+        {/* Logo */}
+        <div onClick={() => setView('list')} style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          cursor: 'pointer', marginRight: 32
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18, boxShadow: '0 0 16px rgba(99,102,241,0.4)'
+          }}>🎟️</div>
+          <span style={{ fontWeight: 800, fontSize: 17, color: '#f1f5f9', letterSpacing: '-0.3px' }}>
+            EventBooking
+          </span>
+        </div>
 
-        {['list', ...(user ? ['myBookings'] : []), ...(isAdmin ? ['addEvent'] : [])].map(v => {
-          const labels = { list: 'Events', myBookings: 'My Bookings', addEvent: '+ Add Event' };
-          return (
-            <button key={v} onClick={() => setView(v)} style={{
-              background: view === v ? 'rgba(255,255,255,0.2)' : 'transparent',
-              color: '#fff',
-              border: view === v ? '1px solid rgba(255,255,255,0.4)' : '1px solid transparent',
-              padding: '7px 16px',
+        {/* Nav links */}
+        <div style={{ display: 'flex', gap: 4 }}>
+          {navItems.filter(n => n.show).map(n => (
+            <button key={n.id} onClick={() => setView(n.id)} style={{
+              background: view === n.id ? 'rgba(99,102,241,0.15)' : 'transparent',
+              color: view === n.id ? '#818cf8' : '#94a3b8',
+              border: view === n.id ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
+              padding: '7px 14px',
               borderRadius: 8,
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: view === v ? 700 : 400,
-              transition: 'all 0.15s'
+              fontSize: 13,
+              fontWeight: view === n.id ? 600 : 400,
+              transition: 'all 0.15s',
             }}>
-              {labels[v]}
+              {n.label}
             </button>
-          );
-        })}
+          ))}
+        </div>
 
+        {/* Right side */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           {user ? (
             <>
               <div style={{
-                background: 'rgba(255,255,255,0.15)',
-                borderRadius: 20,
-                padding: '5px 14px',
-                fontSize: 13,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 20, padding: '5px 14px', fontSize: 13
               }}>
-                <span>👤</span>
-                <span>{user.email}</span>
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 700, color: '#fff'
+                }}>
+                  {user.email?.[0]?.toUpperCase()}
+                </div>
+                <span style={{ color: '#cbd5e1' }}>{user.email}</span>
                 {isAdmin && (
                   <span style={{
-                    background: '#fbbf24',
-                    color: '#92400e',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: '1px 6px',
-                    borderRadius: 10
+                    background: 'rgba(99,102,241,0.2)',
+                    color: '#818cf8',
+                    fontSize: 10, fontWeight: 700,
+                    padding: '1px 6px', borderRadius: 8,
+                    border: '1px solid rgba(99,102,241,0.3)'
                   }}>ADMIN</span>
                 )}
               </div>
               <button onClick={handleLogout} style={{
-                background: 'rgba(239,68,68,0.85)',
-                color: '#fff',
-                border: 'none',
-                padding: '7px 16px',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 600
+                background: 'rgba(239,68,68,0.1)',
+                color: '#f87171',
+                border: '1px solid rgba(239,68,68,0.2)',
+                padding: '7px 16px', borderRadius: 8,
+                fontSize: 13, fontWeight: 600,
+                transition: 'all 0.15s'
               }}>
                 Logout
               </button>
             </>
           ) : (
             <button onClick={() => setView('auth')} style={{
-              background: '#fff',
-              color: '#1e40af',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: '#fff',
               border: 'none',
-              padding: '8px 20px',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: 14
+              padding: '8px 20px', borderRadius: 8,
+              fontSize: 13, fontWeight: 700,
+              boxShadow: '0 0 16px rgba(99,102,241,0.3)',
+              transition: 'all 0.15s'
             }}>
-              Login / Register
+              Sign In
             </button>
           )}
         </div>
       </nav>
 
-      {/* ── Main ──────────────────────────────────────────────────────── */}
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '36px 24px' }}>
+      {/* ── Main ───────────────────────────────────────────────────────────── */}
+      <main style={{ flex: 1, maxWidth: 1200, width: '100%', margin: '0 auto', padding: '40px 24px' }}>
         {view === 'auth'       && <AuthPage onLogin={handleLogin} />}
-        {view === 'list'       && <EventList onSelect={openDetail} />}
-        {view === 'detail'     && <EventDetail id={selectedId} isLoggedIn={!!user} onBack={() => setView('list')} />}
+        {view === 'list'       && <EventList onSelect={id => { setSelectedId(id); setView('detail'); }} />}
+        {view === 'detail'     && <EventDetail id={selectedId} user={user} onBack={() => setView('list')} />}
         {view === 'myBookings' && user && <MyBookings />}
+        {view === 'dashboard'  && isAdmin && <AdminDashboard />}
         {view === 'addEvent'   && isAdmin && <AddEvent onCreated={() => setView('list')} />}
       </main>
 
-      {/* ── Footer ────────────────────────────────────────────────────── */}
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
       <footer style={{
-        textAlign: 'center',
-        padding: '24px',
-        color: '#94a3b8',
-        fontSize: 13,
-        borderTop: '1px solid #e2e8f0',
-        marginTop: 48
+        textAlign: 'center', padding: '20px',
+        color: '#475569', fontSize: 12,
+        borderTop: '1px solid rgba(255,255,255,0.05)'
       }}>
-        EventBooking System © 2026 — Gezim Jusufi & Metin Memeti · SEEU
+        EventBooking System © 2026 · Gezim Jusufi & Metin Memeti · SEEU
       </footer>
     </div>
   );

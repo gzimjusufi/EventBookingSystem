@@ -11,4 +11,5 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
 
     public DbSet<Event> Events { get; set; }
     public DbSet<Booking> Bookings { get; set; }
+    public DbSet<Review> Reviews { get; set; }
 }
