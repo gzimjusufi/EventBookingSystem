@@ -3,7 +3,6 @@ import { updateEvent } from '../services/api';
 
 const CATEGORIES = ['Concert', 'Sport', 'Theatre', 'Festival', 'Conference'];
 
-// Converts a UTC ISO string → local datetime-local value (YYYY-MM-DDTHH:mm)
 function toLocalDatetimeValue(isoString) {
   if (!isoString) return '';
   const d = new Date(isoString);
@@ -11,7 +10,15 @@ function toLocalDatetimeValue(isoString) {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+const minDateValue = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 2);
+  return d.toISOString().slice(0, 16);
+};
+
 export default function EditEvent({ event, onUpdated, onCancel }) {
+  const bookedTickets = event.totalTickets - event.availableTickets;
+
   const [form, setForm] = useState({
     title:        event.title        ?? '',
     description:  event.description  ?? '',
@@ -85,7 +92,17 @@ export default function EditEvent({ event, onUpdated, onCancel }) {
 
           <div>
             {label('Date & Time *')}
-            <input name="eventDate" type="datetime-local" value={form.eventDate} onChange={handleChange} required />
+            <input
+              name="eventDate"
+              type="datetime-local"
+              value={form.eventDate}
+              onChange={handleChange}
+              min={minDateValue()}
+              required
+            />
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+              Must be at least 2 days from today.
+            </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -95,7 +112,20 @@ export default function EditEvent({ event, onUpdated, onCancel }) {
             </div>
             <div>
               {label('Total Tickets *')}
-              <input name="totalTickets" type="number" min="1" value={form.totalTickets} onChange={handleChange} required placeholder="100" />
+              <input
+                name="totalTickets"
+                type="number"
+                min={bookedTickets}
+                value={form.totalTickets}
+                onChange={handleChange}
+                required
+                placeholder="100"
+              />
+              {bookedTickets > 0 && (
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                  {bookedTickets} already booked — minimum is {bookedTickets}.
+                </p>
+              )}
             </div>
           </div>
 
