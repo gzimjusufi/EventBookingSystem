@@ -61,12 +61,20 @@ public class EventService : IEventService
         var evt = await _eventRepository.GetEventById(id)
             ?? throw new Exception("Event not found.");
 
+        // Calculate how many tickets are already booked
+        var bookedTickets = evt.TotalTickets - evt.AvailableTickets;
+
+        // Prevent setting totalTickets below already booked amount
+        if (dto.TotalTickets < bookedTickets)
+            throw new Exception($"Cannot set total tickets below {bookedTickets} — that many are already booked.");
+
         evt.Title = dto.Title;
         evt.Description = dto.Description;
         evt.Location = dto.Location;
         evt.EventDate = dto.EventDate;
         evt.TicketPrice = dto.TicketPrice;
         evt.TotalTickets = dto.TotalTickets;
+        evt.AvailableTickets = dto.TotalTickets - bookedTickets; // ✅ the fix
         evt.Category = dto.Category;
 
         await _eventRepository.UpdateEvent(evt);
