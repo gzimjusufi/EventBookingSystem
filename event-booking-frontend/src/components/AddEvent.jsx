@@ -1,11 +1,34 @@
 import { useState } from 'react';
-import { createEvent } from '../services/api';
+import { updateEvent } from '../services/api';
 
 const CATEGORIES = ['Concert', 'Sport', 'Theatre', 'Festival', 'Conference'];
 
-export default function AddEvent({ onCreated }) {
-  const [form, setForm]     = useState({ title: '', description: '', location: '', eventDate: '', ticketPrice: '', totalTickets: '', category: 'Concert' });
-  const [status, setStatus] = useState('');
+function toLocalDatetimeValue(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+const minDateValue = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 2);
+  return d.toISOString().slice(0, 16);
+};
+
+export default function EditEvent({ event, onUpdated, onCancel }) {
+  const bookedTickets = event.totalTickets - event.availableTickets;
+
+  const [form, setForm] = useState({
+    title:        event.title        ?? '',
+    description:  event.description  ?? '',
+    location:     event.location     ?? '',
+    eventDate:    toLocalDatetimeValue(event.eventDate),
+    ticketPrice:  event.ticketPrice  ?? '',
+    totalTickets: event.totalTickets ?? '',
+    category:     event.category     ?? 'Concert',
+  });
+  const [status,  setStatus]  = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
@@ -14,20 +37,22 @@ export default function AddEvent({ onCreated }) {
     e.preventDefault();
     setLoading(true); setStatus('');
     try {
-      await createEvent({
+      await updateEvent(event.id, {
         ...form,
         ticketPrice:  parseFloat(form.ticketPrice),
         totalTickets: parseInt(form.totalTickets),
         eventDate:    new Date(form.eventDate).toISOString(),
       });
       setStatus('success');
-      setForm({ title: '', description: '', location: '', eventDate: '', ticketPrice: '', totalTickets: '', category: 'Concert' });
+      setTimeout(() => onUpdated(), 1200);
     } catch (err) {
       setStatus('error:' + err.message);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const label = (text) => (
+  const label = text => (
     <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
       {text}
     </label>
@@ -37,11 +62,11 @@ export default function AddEvent({ onCreated }) {
     <div style={{ maxWidth: 560 }}>
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 4,
-          background: 'linear-gradient(135deg, #f1f5f9, #818cf8)',
+          background: 'linear-gradient(135deg, #f1f5f9, #f59e0b)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Create Event
+          Edit Event
         </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Add a new event for users to discover and book</p>
+        <p style={{ color: 'var(--text-secondary)' }}>Update the details for <strong style={{ color: 'var(--text-primary)' }}>{event.title}</strong></p>
       </div>
 
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: 28 }}>
@@ -67,7 +92,17 @@ export default function AddEvent({ onCreated }) {
 
           <div>
             {label('Date & Time *')}
-            <input name="eventDate" type="datetime-local" value={form.eventDate} onChange={handleChange} required />
+            <input
+              name="eventDate"
+              type="datetime-local"
+              value={form.eventDate}
+              onChange={handleChange}
+              min={minDateValue()}
+              required
+            />
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+              Must be at least 2 days from today.
+            </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -77,35 +112,57 @@ export default function AddEvent({ onCreated }) {
             </div>
             <div>
               {label('Total Tickets *')}
-              <input name="totalTickets" type="number" min="1" value={form.totalTickets} onChange={handleChange} required placeholder="100" />
+              <input
+                name="totalTickets"
+                type="number"
+                min={bookedTickets}
+                value={form.totalTickets}
+                onChange={handleChange}
+                required
+                placeholder="100"
+              />
+              {bookedTickets > 0 && (
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                  {bookedTickets} already booked — minimum is {bookedTickets}.
+                </p>
+              )}
             </div>
           </div>
 
           <div>
             {label('Description')}
-            <textarea name="description" value={form.description} onChange={handleChange} rows={3} placeholder="Describe the event..." style={{ resize: 'vertical' }} />
+            <textarea name="description" value={form.description} onChange={handleChange} rows={3}
+              placeholder="Describe the event..." style={{ resize: 'vertical' }} />
           </div>
 
-          <button type="submit" disabled={loading} style={{
-            padding: '13px',
-            background: loading ? 'rgba(99,102,241,0.4)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            color: '#fff', border: 'none', borderRadius: 10,
-            fontWeight: 700, fontSize: 15,
-            boxShadow: loading ? 'none' : '0 0 20px rgba(99,102,241,0.3)',
-            transition: 'all 0.2s'
-          }}>
-            {loading ? 'Creating...' : '✨ Create Event'}
-          </button>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button type="button" onClick={onCancel} style={{
+              flex: 1, padding: '13px',
+              background: 'transparent',
+              color: 'var(--text-secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 10, fontWeight: 600, fontSize: 15, cursor: 'pointer'
+            }}>
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} style={{
+              flex: 2, padding: '13px',
+              background: loading ? 'rgba(245,158,11,0.4)' : 'linear-gradient(135deg, #f59e0b, #ef4444)',
+              color: '#fff', border: 'none', borderRadius: 10,
+              fontWeight: 700, fontSize: 15,
+              boxShadow: loading ? 'none' : '0 0 20px rgba(245,158,11,0.3)',
+              transition: 'all 0.2s', cursor: loading ? 'not-allowed' : 'pointer'
+            }}>
+              {loading ? 'Saving...' : '💾 Save Changes'}
+            </button>
+          </div>
         </form>
 
         {status === 'success' && (
           <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 10,
             background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
             color: '#34d399', fontWeight: 600 }}>
-            ✅ Event created!{' '}
-            <button onClick={onCreated} style={{ background: 'none', border: 'none', color: '#34d399', cursor: 'pointer', textDecoration: 'underline', fontWeight: 700 }}>
-              View all events
-            </button>
+            ✅ Event updated! Redirecting...
           </div>
         )}
         {status.startsWith('error:') && (

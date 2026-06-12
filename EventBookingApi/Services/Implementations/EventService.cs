@@ -68,6 +68,9 @@ public class EventService : IEventService
         if (dto.TotalTickets < bookedTickets)
             throw new Exception($"Cannot set total tickets below {bookedTickets} — that many are already booked.");
 
+        if (dto.EventDate <= DateTime.UtcNow.AddDays(2))
+            throw new Exception("Event date must be at least 2 days in the future.");
+
         evt.Title = dto.Title;
         evt.Description = dto.Description;
         evt.Location = dto.Location;
